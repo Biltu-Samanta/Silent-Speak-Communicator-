@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>SpeechLess — AI Hand Gesture Communication</title>
+    <meta name="description" content="AI-powered hand gesture recognition system that helps speech-impaired individuals communicate using webcam and hand signs. Supports English, Hindi, and Bengali." />
+    <meta name="keywords" content="hand gesture, speech impaired, communication, sign language, MediaPipe, AI, accessibility" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <header class="header" id="header">
+        <div class="header-left">
+            <h1 class="logo">
+                <span class="logo-text">SpeechLess</span>
+            </h1>
+            <p class="tagline">AI Hand Gesture Communication</p>
+        </div>
+        <div class="header-right">
+            <div class="control-group">
+                <label for="languageSelect" class="control-label">Language</label>
+                <select id="languageSelect" class="select-control" title="Select language">
+                    <option value="en">English</option>
+                    <option value="hi">हिन्दी</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+
+        <section class="camera-section glass-card" id="cameraSection">
+            <div class="section-header">
+                <h2>Camera Feed</h2>
+                <div class="fps-badge" id="fpsBadge">-- FPS</div>
+            </div>
+
+            <div class="camera-container" id="cameraContainer">
+                <video id="webcam" autoplay playsinline muted></video>
+                <canvas id="outputCanvas"></canvas>
+
+                <div class="camera-overlay" id="cameraOverlay">
+                    <div class="loader"></div>
+                    <p>Initialising camera &amp; AI model...</p>
+                </div>
+
+                <div class="camera-overlay error-overlay" id="errorOverlay" style="display:none;">
+                    <p class="error-icon">!</p>
+                    <p>Camera access denied</p>
+                    <button class="btn btn-primary" onclick="location.reload()">Retry</button>
+                </div>
+            </div>
+
+            <div class="camera-controls">
+                <button id="startBtn" class="btn btn-primary" disabled>
+                    <span>Start Detection</span>
+                </button>
+                <button id="stopBtn" class="btn btn-secondary" disabled>
+                    <span>Stop</span>
+                </button>
+            </div>
+        </section>
+
+        <section class="output-section">
+
+            <div class="gesture-card glass-card" id="gestureCard">
+                <div class="section-header">
+                    <h2>Detected Gesture</h2>
+                </div>
+                <div class="gesture-display">
+                    <div class="gesture-text" id="gestureText">---</div>
+                    <div class="translated-text" id="translatedText"></div>
+                </div>
+            </div>
+
+            <div class="fingers-card glass-card">
+                <div class="section-header">
+                    <h2>Finger Status</h2>
+                </div>
+                <div class="finger-indicators" id="fingerIndicators">
+                    <div class="finger-item" id="finger-thumb">
+                        <span class="finger-name">Thumb</span>
+                        <span class="finger-state">—</span>
+                    </div>
+                    <div class="finger-item" id="finger-index">
+                        <span class="finger-name">Index</span>
+                        <span class="finger-state">—</span>
+                    </div>
+                    <div class="finger-item" id="finger-middle">
+                        <span class="finger-name">Middle</span>
+                        <span class="finger-state">—</span>
+                    </div>
+                    <div class="finger-item" id="finger-ring">
+                        <span class="finger-name">Ring</span>
+                        <span class="finger-state">—</span>
+                    </div>
+                    <div class="finger-item" id="finger-pinky">
+                        <span class="finger-name">Pinky</span>
+                        <span class="finger-state">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="voice-card glass-card">
+                <div class="section-header">
+                    <h2>Voice Output</h2>
+                </div>
+                <div class="voice-controls">
+                    <div class="voice-status" id="voiceStatus">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span id="voiceStatusText">Ready</span>
+                    </div>
+                    <button id="voiceToggle" class="btn btn-accent">
+                        Voice On
+                    </button>
+                </div>
+                <p class="voice-info" id="voiceInfo">
+                    Browser Voice TTS — English &amp; Hindi
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <div class="subtitle-bar" id="subtitleBar">
+        <div class="subtitle-text" id="subtitleText">
+            Show your hand to start communicating
+        </div>
+    </div>
+
+    <button class="guide-toggle" id="guideToggle" title="Gesture guide">?</button>
+    <div class="guide-panel glass-card" id="guidePanel" style="display:none;">
+        <h3>Gesture Guide</h3>
+        <div class="guide-grid">
+            <div class="guide-item"><span>☝️</span> Index only → <strong>Hello</strong></div>
+            <div class="guide-item"><span>👍</span> Thumb up → <strong>Good</strong></div>
+            <div class="guide-item"><span>🖐️</span> All fingers → <strong>Stop</strong></div>
+            <div class="guide-item"><span>✊</span> Closed fist → <strong>Sorry</strong></div>
+            <div class="guide-item"><span>✌️</span> V sign → <strong>Thank You</strong></div>
+            <div class="guide-item"><span>🤙</span> Pinky only → <strong>Bye</strong></div>
+            <div class="guide-item"><span>👆</span> Thumb+Index → <strong>Yes</strong></div>
+            <div class="guide-item"><span>🤟</span> Thumb+Pinky → <strong>No</strong></div>
+            <div class="guide-item"><span>🤚</span> 3 fingers → <strong>Help</strong></div>
+        </div>
+        <button class="btn btn-secondary" onclick="document.getElementById('guidePanel').style.display='none'">Close</button>
+    </div>
+
+    <script type="module" src="script.js"></script>
+
+</body>
+</html>
