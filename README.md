@@ -1,4 +1,4 @@
-# 🤟 SpeechLess — AI Hand Gesture Communication
+##  SpeechLess — AI Hand Gesture Communication
 
 > An AI-powered hand gesture recognition system that enables speech-impaired individuals to communicate using real-time webcam-based sign language detection.
 
@@ -288,32 +288,89 @@ The milestone delivered:
    cd speech-less-translator
    ```
 
-2. Open `index.html` in any modern browser (Chrome recommended for best MediaPipe performance).
+2. Serve the app over HTTP (required for ESP32-CAM mode; also works for webcam):
+   ```bash
+   python -m http.server 8080
+   # Then open: http://localhost:8080
+   ```
+   Or simply open `index.html` directly in Chrome for webcam-only use.
 
 3. Allow camera access when prompted — detection starts automatically.
 
 ### ESP32-CAM Version
 
-1. Open `esp32cam_stream.ino` in **Arduino IDE**.
-2. Update the WiFi credentials:
+1. Open `esp32-cam/esp32_cam_stream.ino` in **Arduino IDE**.
+2. Update the Wi-Fi credentials:
    ```cpp
-   const char* WIFI_SSID     = "YourNetworkName";
-   const char* WIFI_PASSWORD = "YourPassword";
+   #define WIFI_SSID     "YourNetworkName"
+   #define WIFI_PASSWORD "YourPassword"
    ```
 3. Select board: **AI-Thinker ESP32-CAM** and upload.
-4. Open Serial Monitor at **115200 baud** to find the device IP address.
-5. Navigate to `http://<device-ip>` in your browser and click **Connect**.
+4. Open Serial Monitor at **115200 baud** — the device IP is printed, e.g.:
+   ```
+   ESP32-CAM ready: 192.168.1.42
+   ```
+5. In the SpeechLess web UI, change **Camera Source** (top-right) to **"ESP32-CAM"**.
+6. Enter `http://192.168.1.42` in the IP field and click **Connect**.
+7. The status dot turns green and gesture detection resumes automatically.
+
+> See [`esp32-cam/README.md`](esp32-cam/README.md) for full wiring diagrams,
+> flashing steps, and troubleshooting.
+
+### Switching Between Webcam and ESP32-CAM
+
+The **Camera Source** dropdown in the header lets you switch at any time:
+
+| Selection | Behaviour |
+|-----------|-----------|
+| Local Webcam | Uses `navigator.mediaDevices.getUserMedia()` — completely untouched smooth webcam pipeline |
+| ESP32-CAM | Shows IP input panel; connects to ESP32 over Wi-Fi with latest-frame low-latency architecture |
+
+Switching back to Local Webcam automatically disconnects the ESP32-CAM stream
+and re-initialises the laptop camera.
+
+---
+
+### ⚡ Low-Latency Latest-Frame Architecture & Diagnostics
+
+To prevent frame freezing and eliminate queue backlog over Wi-Fi, the ESP32-CAM pipeline uses a **Latest-Frame-Wins + Decoupled Display** design:
+
+1. **Decoupled Display Loop:**
+   - The browser rendering loop continuously paints the freshest frame from the ESP32 offscreen canvas.
+   - Screen rendering is completely independent of MediaPipe inference duration. Video never freezes while AI computes.
+
+2. **Latest-Frame MediaPipe Scheduler:**
+   - When MediaPipe is busy, incoming stream frames are immediately rendered to screen, while intermediate frames are dropped from AI queue.
+   - When MediaPipe finishes, it processes strictly the freshest frame. Zero backlog accumulation.
+   - Adaptive frame-rate pacing targets a stable 10–15 FPS for hand landmark tracking.
+
+3. **Stream-Only Test Mode:**
+   - Toggle between **AI Tracking** and **Stream-Only Test** in the ESP32 panel.
+   - In Stream-Only mode, MediaPipe is completely bypassed to verify raw Wi-Fi and MJPEG streaming smoothness.
+
+4. **Real-Time Diagnostics & Benchmark:**
+   - Click **Diagnostics** to toggle the live telemetry overlay:
+     - Wi-Fi RSSI (dBm), Stream FPS, JPEG payload size (KB)
+     - Frames Received, Processed, and Dropped
+     - MediaPipe FPS and execution duration (ms)
+     - End-to-end approximate latency (ms)
+   - Click **Run FPS Benchmark (5s)** to run an automated 5-second performance measurement showing min/avg/max FPS and drop statistics.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-speech-less-translator/
-├── index.html          # Main browser UI — layout and structure
-├── style.css           # Glassmorphism UI design, dark/light tokens
-├── script.js           # MediaPipe integration, gesture logic, TTS
-└── esp32cam_stream.ino # ESP32-CAM firmware (camera + embedded web UI)
+silent-speak-communicator/
+├── index.html               # Main browser UI — layout and structure
+├── style.css                # Glassmorphism UI design, dark/light tokens
+├── script.js                # MediaPipe integration, gesture logic, TTS
+├── camera-source.js         # Camera-source abstraction (NEW)
+│                          #   LocalCameraSource  — getUserMedia() webcam
+│                          #   ESP32CameraSource  — MJPEG / JPEG-poll stream
+└── esp32-cam/               # ESP32-CAM hardware firmware (NEW)
+    ├── esp32_cam_stream.ino   # Arduino sketch — HTTP server, MJPEG/JPEG
+    └── README.md              # Detailed flashing & setup instructions
 ```
 
 ---
@@ -328,4 +385,5 @@ speech-less-translator/
 
 ---
 
-*Built with ❤️ for accessibility.*
+*Built with ❤️ for accessibility.*#   H a n d - G e s t u r e - w i t h - H a r d w a r e  
+ 
